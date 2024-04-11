@@ -74,7 +74,7 @@ export default class Changelog extends Plugin {
   }
 
   buildChangelog(): string {
-    const pathsToExclude = this.settings.excludePaths.split(',');
+    const pathsToExclude = this.settings.excludePaths.split(",");
     const cache = this.app.metadataCache;
     const files = this.app.vault.getMarkdownFiles();
     const recentlyEditedFiles = files
@@ -84,29 +84,25 @@ export default class Changelog extends Plugin {
           recentlyEditedFile.path !== this.settings.changelogFilePath
       )
       // Remove files from paths to be excluded from recentlyEditedFiles list
-      .filter(
-        function (recentlyEditedFile) {
-          let i;
-          let keep = true;
-          for (i = 0; i < pathsToExclude.length; i++) {
-            if (recentlyEditedFile.path.startsWith(pathsToExclude[i].trim())) {
-              keep = false;
-              break;
-            }
+      .filter(function (recentlyEditedFile) {
+        let i;
+        let keep = true;
+        for (i = 0; i < pathsToExclude.length; i++) {
+          if (recentlyEditedFile.path.startsWith(pathsToExclude[i].trim())) {
+            keep = false;
+            break;
           }
-          return keep;
         }
-      )
-      // exclude if specifically told not to
-      .filter(
-        function (recentlyEditedFile) {
-          const frontMatter = cache.getFileCache(recentlyEditedFile).frontmatter;
-          if (frontMatter && frontMatter.publish === false) {
-            return false;  
-          }
+        return keep;
+      })
+      // include only if file is marked to be published
+      .filter(function (recentlyEditedFile) {
+        const frontMatter = cache.getFileCache(recentlyEditedFile).frontmatter;
+        if (frontMatter && frontMatter.publish === true) {
           return true;
-         }        
-      )
+        }
+        return false;
+      })
       .sort((a, b) => (a.stat.mtime < b.stat.mtime ? 1 : -1))
       .slice(0, this.settings.numberOfFilesToShow);
     let changelogContent = ``;
@@ -117,11 +113,13 @@ export default class Changelog extends Plugin {
         .moment(recentlyEditedFile.stat.mtime)
         // date is already shown in the titles
         .format("YYYY-MM-DD HH[h]mm");
-        if (header != humanTime.substring(0,10)) {
-        header = humanTime.substring(0,10)
-        changelogContent += `## ${header}\n`
+      if (header != humanTime.substring(0, 10)) {
+        header = humanTime.substring(0, 10);
+        changelogContent += `## ${header}\n`;
       }
-      changelogContent += `- ${humanTime.substring(10,16)} · [[${recentlyEditedFile.basename}]]\n`;
+      changelogContent += `- ${humanTime.substring(10, 16)} · [[${
+        recentlyEditedFile.basename
+      }]]\n`;
     }
     return changelogContent;
   }
@@ -211,10 +209,12 @@ class ChangelogSettingsTab extends PluginSettingTab {
             this.plugin.registerWatchVaultEvents();
           })
       );
-    
-      new Setting(containerEl)
+
+    new Setting(containerEl)
       .setName("Excluded paths")
-      .setDesc("Paths or folders to ignore from changelog, separated by a comma")
+      .setDesc(
+        "Paths or folders to ignore from changelog, separated by a comma"
+      )
       .addText((text) => {
         text
           .setPlaceholder("Example: Meetings,People")
