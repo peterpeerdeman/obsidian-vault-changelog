@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS: ChangelogSettings = {
   watchVaultChange: false,
   excludePaths: "",
   showTime: true,
+  frontmatterPublish: false,
 };
 
 declare global {
@@ -107,6 +108,9 @@ export default class Changelog extends Plugin {
       .sort((a, b) => (a.stat.mtime < b.stat.mtime ? 1 : -1))
       .slice(0, this.settings.numberOfFilesToShow);
     let changelogContent = ``;
+    if (this.settings.frontmatterPublish) {
+      changelogContent += `---\npublish: true\n---\n`;
+    }
     let header = ``;
     for (let recentlyEditedFile of recentlyEditedFiles) {
       // TODO: make date format configurable (and validate it)
@@ -155,6 +159,7 @@ interface ChangelogSettings {
   watchVaultChange: boolean;
   excludePaths: string;
   showTime: boolean;
+  frontmatterPublish: boolean;
 }
 
 class ChangelogSettingsTab extends PluginSettingTab {
@@ -231,15 +236,28 @@ class ChangelogSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Show time in changelog")
-      .setDesc(
-        "whether or not you want the lines in changelog to show the time of edit"
-      )
+      .setDesc("Have the lines in changelog to show the time of edit or not")
       .addToggle((toggle) =>
         toggle.setValue(this.plugin.settings.showTime).onChange((value) => {
           this.plugin.settings.showTime = value;
           this.plugin.saveSettings();
           this.plugin.registerWatchVaultEvents();
         })
+      );
+
+    new Setting(containerEl)
+      .setName("Write frontmatter publish value")
+      .setDesc(
+        "Explicitly publish the changelog through frontmatter publish value"
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.frontmatterPublish)
+          .onChange((value) => {
+            this.plugin.settings.frontmatterPublish = value;
+            this.plugin.saveSettings();
+            this.plugin.registerWatchVaultEvents();
+          })
       );
   }
 }
