@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS: ChangelogSettings = {
   changelogFilePath: "",
   watchVaultChange: false,
   excludePaths: "",
+  showTime: true,
 };
 
 declare global {
@@ -117,9 +118,11 @@ export default class Changelog extends Plugin {
         header = humanTime.substring(0, 10);
         changelogContent += `## ${header}\n`;
       }
-      changelogContent += `- ${humanTime.substring(10, 16)} · [[${
-        recentlyEditedFile.basename
-      }]]\n`;
+      changelogContent += `- `;
+      if (this.settings.showTime) {
+        changelogContent += `${humanTime.substring(10, 16)} `;
+      }
+      changelogContent += `[[${recentlyEditedFile.basename}]]\n`;
     }
     return changelogContent;
   }
@@ -151,6 +154,7 @@ interface ChangelogSettings {
   numberOfFilesToShow: number;
   watchVaultChange: boolean;
   excludePaths: string;
+  showTime: boolean;
 }
 
 class ChangelogSettingsTab extends PluginSettingTab {
@@ -224,5 +228,18 @@ class ChangelogSettingsTab extends PluginSettingTab {
             this.plugin.saveSettings();
           });
       });
+
+    new Setting(containerEl)
+      .setName("Show time in changelog")
+      .setDesc(
+        "whether or not you want the lines in changelog to show the time of edit"
+      )
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.showTime).onChange((value) => {
+          this.plugin.settings.showTime = value;
+          this.plugin.saveSettings();
+          this.plugin.registerWatchVaultEvents();
+        })
+      );
   }
 }
